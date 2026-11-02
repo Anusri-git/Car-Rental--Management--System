@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Car Rental Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Automotive CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-car-front-fill brand-red"></i> APEX <span class="brand-red">DRIVE</span>
+            </a>
+            <button class="navbar-toggler text-white border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav ms-auto align-items-lg-center" id="navbar-auth-links">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="cars.html">Available Cars</a></li>
+                    <li class="nav-item ms-lg-2"><a class="btn-red" href="register.html">Register</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- LOGIN MAIN -->
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <h2 class="auth-title">Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to your Car Rental account</p>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email or Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" placeholder="name@example.com" required autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="password" class="form-label mb-0">Password</label>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-key"></i></span>
+                        <input type="password" class="form-control" id="password" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-red w-100 py-2 mb-3" id="submitBtn">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </button>
+            </form>
+
+            <!-- DEMO LOGIN QUICK ACTIONS FOR VIVA/TESTING -->
+            <div class="card p-3 my-3" style="background: rgba(255,255,255,0.03); border: 1px dashed var(--border-color);">
+                <div class="text-center mb-2">
+                    <small class="text-secondary fw-bold text-uppercase"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Demo Credentials</small>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-outline-light text-start py-1" onclick="fillCredentials('john@example.com', 'User@123')">
+                        <i class="bi bi-person me-1 text-primary"></i> <strong>Customer:</strong> john@example.com
+                    </button>
+                    <button class="btn btn-sm btn-outline-light text-start py-1" onclick="fillCredentials('admin@carrental.com', 'Admin@123')">
+                        <i class="bi bi-shield-lock me-1 text-danger"></i> <strong>Admin:</strong> admin@carrental.com
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center text-secondary mt-3">
+                Don't have an account? <a href="register.html" class="text-danger fw-bold text-decoration-none">Create Account</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        function fillCredentials(email, pwd) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = pwd;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await checkAuthStatus();
+            if (user) {
+                // If already logged in, redirect to dashboard
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('logout') === 'true') {
+                showAlert('You have been logged out successfully.', 'success');
+            } else if (urlParams.get('registered') === 'true') {
+                showAlert('Registration successful! Please login with your credentials.', 'success');
+            }
+
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const submitBtn = document.getElementById('submitBtn');
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+
+                try {
+                    const res = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const result = await res.json();
+
+                    if (result.success && result.data) {
+                        showAlert('Login successful! Redirecting...', 'success');
+                        setTimeout(() => {
+                            if (result.data.role === 'ROLE_ADMIN') {
+                                window.location.href = 'admin.html';
+                            } else {
+                                window.location.href = 'dashboard.html';
+                            }
+                        }, 800);
+                    } else {
+                        showAlert(result.message || 'Invalid credentials');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Sign In';
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Server connection error. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Sign In';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Car Rental Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Automotive CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-car-front-fill brand-red"></i> APEX <span class="brand-red">DRIVE</span>
+                <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">ADMIN CONSOLE</span>
+            </a>
+            <button class="navbar-toggler text-white border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav ms-auto align-items-lg-center" id="navbar-auth-links">
+                    <!-- Populated by app.js -->
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ADMIN HERO & KPI STATS -->
+    <div class="py-4" style="background: linear-gradient(180deg, #162447 0%, #0b132b 100%); border-bottom: 1px solid var(--border-color);">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                <div>
+                    <span class="badge bg-danger text-uppercase mb-1"><i class="bi bi-shield-lock-fill me-1"></i> Operations Control</span>
+                    <h1 class="fw-bold text-white mb-1">Fleet & Booking Management</h1>
+                    <p class="text-secondary mb-0">Full CRUD operations on cars, booking lifecycle management, and Java I/O CSV exports.</p>
+                </div>
+                <div class="mt-3 mt-md-0 d-flex gap-2">
+                    <button class="btn-red" onclick="openAddCarModal()">
+                        <i class="bi bi-plus-circle me-1"></i> Add New Car
+                    </button>
+                    <a href="/api/admin/bookings/export" class="btn btn-outline-success" title="Export CSV using Java I/O">
+                        <i class="bi bi-filetype-csv me-1"></i> Export Bookings CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- KPI STATS CARDS -->
+            <div class="row g-3">
+                <div class="col-lg-3 col-sm-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Total Fleet</div>
+                            <div class="stat-value" id="kpiTotalCars">-</div>
+                            <small class="text-secondary">Vehicles in system</small>
+                        </div>
+                        <div class="stat-icon"><i class="bi bi-car-front"></i></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-sm-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Available / Rented</div>
+                            <div class="stat-value text-success" id="kpiAvailCars">-</div>
+                            <small class="text-secondary" id="kpiRentedCars">- currently rented</small>
+                        </div>
+                        <div class="stat-icon text-success" style="background: rgba(16,185,129,0.15);"><i class="bi bi-check2-circle"></i></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-sm-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Total Bookings</div>
+                            <div class="stat-value" id="kpiTotalBookings">-</div>
+                            <small class="text-secondary" id="kpiActiveBookings">- active</small>
+                        </div>
+                        <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-sm-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Gross Revenue</div>
+                            <div class="stat-value text-danger" id="kpiRevenue">-</div>
+                            <small class="text-secondary" id="kpiCustomers">- customers</small>
+                        </div>
+                        <div class="stat-icon text-danger"><i class="bi bi-cash-stack"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN ADMIN TABS -->
+    <div class="container py-4 flex-grow-1">
+
+        <div id="alert-container"></div>
+
+        <ul class="nav nav-tabs border-secondary mb-4" id="adminTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active text-white" id="cars-tab" data-bs-toggle="tab" data-bs-target="#carsTabPane" type="button">
+                    <i class="bi bi-car-front me-2"></i>Car Fleet Management
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link text-white" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#bookingsTabPane" type="button">
+                    <i class="bi bi-journal-text me-2"></i>All Customer Bookings
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link text-white" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customersTabPane" type="button">
+                    <i class="bi bi-people me-2"></i>Registered Customers
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="adminTabContent">
+            
+            <!-- CARS MANAGEMENT TAB -->
+            <div class="tab-pane fade show active" id="carsTabPane" role="tabpanel">
+                <div class="custom-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="text-white fw-bold mb-0">Vehicle Inventory</h4>
+                        <button class="btn-red btn-sm" onclick="openAddCarModal()">
+                            <i class="bi bi-plus-lg me-1"></i> Add Car
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Vehicle</th>
+                                    <th>Category</th>
+                                    <th>License Plate</th>
+                                    <th>Daily Price</th>
+                                    <th>Specs</th>
+                                    <th>Availability</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminCarsTableBody">
+                                <tr><td colspan="8" class="text-center py-4 text-secondary">Loading inventory...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOOKINGS MANAGEMENT TAB -->
+            <div class="tab-pane fade" id="bookingsTabPane" role="tabpanel">
+                <div class="custom-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="text-white fw-bold mb-0">Customer Reservations</h4>
+                        <a href="/api/admin/bookings/export" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export to CSV
+                        </a>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Booking Ref</th>
+                                    <th>Customer</th>
+                                    <th>Vehicle</th>
+                                    <th>Pickup</th>
+                                    <th>Return</th>
+                                    <th>Days</th>
+                                    <th>Total ($)</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Update Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminBookingsTableBody">
+                                <tr><td colspan="9" class="text-center py-4 text-secondary">Loading bookings...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CUSTOMERS TAB -->
+            <div class="tab-pane fade" id="customersTabPane" role="tabpanel">
+                <div class="custom-card">
+                    <h4 class="text-white fw-bold mb-3">Registered Customer Directory</h4>
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminCustomersTableBody">
+                                <tr><td colspan="7" class="text-center py-4 text-secondary">Loading customer accounts...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- CAR MODAL (ADD / EDIT) -->
+    <div class="modal fade" id="carModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-white" id="carModalTitle">Add Vehicle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="carForm">
+                        <input type="hidden" id="carFormId">
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="carBrand" class="form-label">Brand</label>
+                                <input type="text" class="form-control" id="carBrand" placeholder="BMW, Toyota, Audi" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="carModel" class="form-label">Model</label>
+                                <input type="text" class="form-control" id="carModel" placeholder="M4 Competition, Camry" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="carCategory" class="form-label">Category</label>
+                                <select class="form-select" id="carCategory" required>
+                                    <option value="HATCHBACK">Hatchback</option>
+                                    <option value="SEDAN">Sedan</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="LUXURY">Luxury</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="carDailyPrice" class="form-label">Daily Price ($)</label>
+                                <input type="number" step="0.01" min="1" class="form-control" id="carDailyPrice" placeholder="95.00" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="carPlate" class="form-label">License Plate</label>
+                                <input type="text" class="form-control" id="carPlate" placeholder="KA-05-AB-1234" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="carFuel" class="form-label">Fuel Type</label>
+                                <select class="form-select" id="carFuel">
+                                    <option value="Petrol">Petrol</option>
+                                    <option value="Diesel">Diesel</option>
+                                    <option value="Electric">Electric</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="carTransmission" class="form-label">Transmission</label>
+                                <select class="form-select" id="carTransmission">
+                                    <option value="Automatic">Automatic</option>
+                                    <option value="Manual">Manual</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="carSeats" class="form-label">Seating Capacity</label>
+                                <input type="number" min="2" max="10" class="form-control" id="carSeats" value="5">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="carImage" class="form-label">Image URL</label>
+                            <input type="url" class="form-control" id="carImage" placeholder="https://images.unsplash.com/photo-...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="carDesc" class="form-label">Vehicle Description</label>
+                            <textarea class="form-control" id="carDesc" rows="2" placeholder="Vehicle features and condition..."></textarea>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="carAvailable" checked>
+                            <label class="form-check-label text-white" for="carAvailable">Available for Rental</label>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn-red" id="saveCarBtn">Save Vehicle</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        let adminCars = [];
+        let carModalInstance = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const admin = await requireAdmin();
+            if (!admin) return;
+
+            carModalInstance = new bootstrap.Modal(document.getElementById('carModal'));
+
+            loadStats();
+            loadAdminCars();
+            loadAdminBookings();
+            loadAdminCustomers();
+
+            document.getElementById('carForm').addEventListener('submit', handleSaveCar);
+        });
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/stats`);
+                const result = await res.json();
+                if (result.success && result.data) {
+                    const s = result.data;
+                    document.getElementById('kpiTotalCars').textContent = s.totalCars;
+                    document.getElementById('kpiAvailCars').textContent = s.availableCars;
+                    document.getElementById('kpiRentedCars').textContent = `${s.rentedCars} currently rented`;
+                    document.getElementById('kpiTotalBookings').textContent = s.totalBookings;
+                    document.getElementById('kpiActiveBookings').textContent = `${s.activeBookings} active reservations`;
+                    document.getElementById('kpiRevenue').textContent = formatCurrency(s.totalRevenue);
+                    document.getElementById('kpiCustomers').textContent = `${s.totalCustomers} registered accounts`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadAdminCars() {
+            const tbody = document.getElementById('adminCarsTableBody');
+            try {
+                const res = await fetch(`${API_BASE}/admin/cars`);
+                const result = await res.json();
+                if (result.success && result.data) {
+                    adminCars = result.data;
+                    tbody.innerHTML = adminCars.map(c => `
+                        <tr>
+                            <td>#${c.id}</td>
+                            <td>
+                                <strong class="text-white">${c.brand} ${c.model}</strong>
+                            </td>
+                            <td><span class="badge bg-secondary">${c.category}</span></td>
+                            <td><code>${c.licensePlate || 'N/A'}</code></td>
+                            <td><strong class="text-danger">${formatCurrency(c.dailyPrice)}</strong>/day</td>
+                            <td><small class="text-secondary">${c.fuelType} &bull; ${c.transmission} &bull; ${c.seatingCapacity} seats</small></td>
+                            <td>
+                                <span class="badge ${c.available ? 'bg-success' : 'bg-warning text-dark'}">
+                                    ${c.available ? 'Available' : 'Rented'}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditCarModal(${c.id})" title="Edit Car">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCar(${c.id}, '${c.brand} ${c.model}')" title="Delete Car">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Failed to load cars.</td></tr>`;
+            }
+        }
+
+        async function loadAdminBookings() {
+            const tbody = document.getElementById('adminBookingsTableBody');
+            try {
+                const res = await fetch(`${API_BASE}/admin/bookings`);
+                const result = await res.json();
+                if (result.success && result.data) {
+                    tbody.innerHTML = result.data.map(b => {
+                        let badgeClass = 'status-confirmed';
+                        if (b.status === 'COMPLETED') badgeClass = 'status-completed';
+                        if (b.status === 'CANCELLED') badgeClass = 'status-cancelled';
+
+                        return `
+                            <tr>
+                                <td><strong class="text-white">${b.bookingNumber}</strong></td>
+                                <td>
+                                    <div class="text-white fw-bold">${b.user.name}</div>
+                                    <small class="text-muted">${b.user.email} &bull; ${b.user.phone}</small>
+                                </td>
+                                <td>${b.car.brand} ${b.car.model}</td>
+                                <td>${formatDate(b.pickupDate)}</td>
+                                <td>${formatDate(b.returnDate)}</td>
+                                <td>${b.totalDays} Days</td>
+                                <td><strong class="text-white">${formatCurrency(b.totalPrice)}</strong></td>
+                                <td><span class="status-badge ${badgeClass}">${b.status}</span></td>
+                                <td class="text-end">
+                                    <select class="form-select form-select-sm d-inline-block w-auto" onchange="changeBookingStatus(${b.id}, this.value)">
+                                        <option value="CONFIRMED" ${b.status === 'CONFIRMED' ? 'selected' : ''}>CONFIRMED</option>
+                                        <option value="COMPLETED" ${b.status === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
+                                        <option value="CANCELLED" ${b.status === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+                                    </select>
+                                    <a href="${API_BASE}/bookings/${b.id}/receipt" class="btn btn-sm btn-outline-custom ms-1" title="Receipt">
+                                        <i class="bi bi-receipt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadAdminCustomers() {
+            const tbody = document.getElementById('adminCustomersTableBody');
+            try {
+                const res = await fetch(`${API_BASE}/admin/customers`);
+                const result = await res.json();
+                if (result.success && result.data) {
+                    tbody.innerHTML = result.data.map(u => `
+                        <tr>
+                            <td>#${u.id}</td>
+                            <td><strong class="text-white">${u.name}</strong></td>
+                            <td>${u.email}</td>
+                            <td>${u.phone}</td>
+                            <td><span class="badge bg-primary">${u.role}</span></td>
+                            <td><span class="badge ${u.active ? 'bg-success' : 'bg-danger'}">${u.active ? 'Active' : 'Disabled'}</span></td>
+                            <td>${u.createdAt ? formatDate(u.createdAt) : 'N/A'}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function openAddCarModal() {
+            document.getElementById('carModalTitle').textContent = 'Add New Vehicle';
+            document.getElementById('carFormId').value = '';
+            document.getElementById('carForm').reset();
+            document.getElementById('carAvailable').checked = true;
+            carModalInstance.show();
+        }
+
+        function openEditCarModal(id) {
+            const car = adminCars.find(c => c.id === id);
+            if (!car) return;
+
+            document.getElementById('carModalTitle').textContent = `Edit Vehicle: ${car.brand} ${car.model}`;
+            document.getElementById('carFormId').value = car.id;
+            document.getElementById('carBrand').value = car.brand;
+            document.getElementById('carModel').value = car.model;
+            document.getElementById('carCategory').value = car.category;
+            document.getElementById('carDailyPrice').value = car.dailyPrice;
+            document.getElementById('carPlate').value = car.licensePlate || '';
+            document.getElementById('carFuel').value = car.fuelType || 'Petrol';
+            document.getElementById('carTransmission').value = car.transmission || 'Automatic';
+            document.getElementById('carSeats').value = car.seatingCapacity || 5;
+            document.getElementById('carImage').value = car.imageUrl || '';
+            document.getElementById('carDesc').value = car.description || '';
+            document.getElementById('carAvailable').checked = car.available;
+
+            carModalInstance.show();
+        }
+
+        async function handleSaveCar(e) {
+            e.preventDefault();
+            const id = document.getElementById('carFormId').value;
+            const isEdit = Boolean(id);
+
+            const payload = {
+                brand: document.getElementById('carBrand').value.trim(),
+                model: document.getElementById('carModel').value.trim(),
+                category: document.getElementById('carCategory').value,
+                dailyPrice: parseFloat(document.getElementById('carDailyPrice').value),
+                licensePlate: document.getElementById('carPlate').value.trim(),
+                fuelType: document.getElementById('carFuel').value,
+                transmission: document.getElementById('carTransmission').value,
+                seatingCapacity: parseInt(document.getElementById('carSeats').value),
+                imageUrl: document.getElementById('carImage').value.trim(),
+                description: document.getElementById('carDesc').value.trim(),
+                available: document.getElementById('carAvailable').checked
+            };
+
+            const url = isEdit ? `${API_BASE}/admin/cars/${id}` : `${API_BASE}/admin/cars`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    carModalInstance.hide();
+                    showAlert(`Vehicle ${isEdit ? 'updated' : 'added'} successfully!`, 'success');
+                    loadAdminCars();
+                    loadStats();
+                } else {
+                    alert(result.message || 'Operation failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server error saving vehicle');
+            }
+        }
+
+        async function deleteCar(id, carName) {
+            if (!confirm(`Are you sure you want to delete "${carName}"? This action cannot be undone.`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/admin/cars/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    showAlert('Car removed from inventory.', 'success');
+                    loadAdminCars();
+                    loadStats();
+                } else {
+                    alert(result.message || 'Delete failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error deleting car');
+            }
+        }
+
+        async function changeBookingStatus(bookingId, newStatus) {
+            try {
+                const res = await fetch(`${API_BASE}/admin/bookings/${bookingId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showAlert(`Booking status updated to ${newStatus}.`, 'success');
+                    loadAdminBookings();
+                    loadStats();
+                    loadAdminCars(); // in case availability changed
+                } else {
+                    alert(result.message || 'Status update failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error updating booking status');
+            }
+        }
+    </script>
+</body>
+</html>
